@@ -1,0 +1,76 @@
+MediQuiz Pro is a web application built with Next.js and React. Its primary purpose is to help users create medical quizzes from their own study materials using Artificial Intelligence.
+Frontend: The user interface is built with React, using components from ShadCN UI and styled with Tailwind CSS. The application follows a modern, responsive design.
+Backend & AI: The backend logic is handled by Next.js Server Actions. The core AI functionalities, such as content analysis and quiz generation, are powered by Google's Genkit.
+Authentication: User management (signup, login, session handling) is provided by Firebase Authentication.
+Data Storage: Generated quizzes are saved locally in the user's browser using localStorage.
+
+The project is organized into several key directories within the src folder:
+src/app/: This is the core of the Next.js application, using the App Router paradigm.
+layout.tsx: The root layout for the entire application. It sets up the HTML structure, fonts, and global providers.
+globals.css: Contains the global styles and the application's color theme using CSS variables for Tailwind CSS.
+page.tsx: The homepage/landing page of the application.
+/login/page.tsx & /signup/page.tsx: Pages for user authentication.
+/create-quiz/page.tsx: The main multi-step page where users create new quizzes.
+/quizzes/page.tsx: A page that lists all quizzes the user has saved.
+/quiz/[quizId]/take/page.tsx: The dynamic page where a user takes a specific quiz.
+actions.ts: A critical server-only file that acts as a bridge between client components and the backend AI flows. It exports async functions that client components can safely call.
+src/components/: Contains all the reusable React components.
+ui/: Holds the standard, un-styled UI components provided by ShadCN (e.g., Button, Card, Input).
+layout/: Components related to the overall page structure, like AppHeader, PageContainer, and AppProviders.
+quiz/: Components specifically designed for the quiz functionality. This is the heart of the user experience:
+ContentInputForm.tsx: The first step of quiz creation, allowing file upload and text pasting. It handles client-side text extraction from PDFs and PPTX files.
+AnalysisResults.tsx: Displays the key concepts and summary from the AI's content analysis.
+QuizConfigForm.tsx: The second step, where the user configures the quiz type and number of questions.
+GeneratedQuizView.tsx: The third step, showing the newly generated quiz for review before saving or taking it.
+QuizPlayer.tsx: The interactive component for taking a quiz, managing question state, and user answers.
+QuestionCard.tsx: Renders a single question with its specific input type (multiple choice, matching, etc.).
+QuizSummary.tsx: Displays the user's score and a review of their answers after completing a quiz.
+SavedQuizzesList.tsx: Fetches quizzes from local storage and displays them in a list.
+src/ai/: Manages all Genkit-related code.
+genkit.ts: Initializes and configures the global Genkit ai instance.
+dev.ts: The entry point for running the Genkit development server. It imports the flows so Genkit can recognize them.
+flows/: Contains the core AI logic encapsulated in Genkit flows.
+content-analyzer.ts: Defines the Genkit flow that takes user content (text or file) and uses an AI prompt to extract key concepts, terms, and a summary.
+quiz-generator.ts: Defines the main Genkit flow for generating questions. It contains a large, detailed prompt with instructions for creating many different types of questions (e.g., multiple-choice, matching, fill-in-the-blank) based on the user's request.
+src/contexts/: Holds React Context providers for managing global state.
+AuthContext.tsx: Manages the user's authentication state (logged in or out), providing the user object and functions like login, signup, and logout to the rest of the app.
+src/hooks/: Contains custom React hooks.
+useLocalStorage.ts: A hook for easily reading from and writing to the browser's local storage, used for saving quizzes.
+use-toast.ts: A hook for showing toast notifications for events like saving a quiz or encountering an error.
+src/lib/: A library of utility functions and configurations.
+firebase.ts: Initializes the Firebase app with the project's credentials.
+quizParser.ts: Contains crucial logic for transforming the raw JSON output from the AI into a structured format that the frontend components can easily use.
+utils.ts: Standard utility functions, including cn for merging Tailwind CSS classes.
+src/types/:
+quiz.ts: A central file defining all the important TypeScript types and Zod schemas used throughout the application, ensuring data consistency between the frontend, the server actions, and the AI models.
+
+Authentication: A user visits the site and can either Login or Sign Up. This is handled by the pages in /app which use the useAuth hook to communicate with Firebase Authentication.
+Quiz Creation:
+The user navigates to /create-quiz. The CreateQuizPage component manages the state for a three-step process.
+Step 1: The ContentInputForm component takes user input (pasted text or a file). For files, it extracts the text on the client side. When the "Analyze" button is clicked, it calls the analyzeContentAction.
+The analyzeContentAction function in actions.ts executes the analyzeContentFlow on the server. The Genkit flow sends the content to the AI model and returns a summary and key concepts.
+Step 2: The result is displayed in the AnalysisResults component. The user then uses the QuizConfigForm to choose the quiz type and number of questions. Clicking "Generate Quiz" calls the generateQuizAction.
+The generateQuizAction executes the quizGeneratorFlow on the server. This complex Genkit flow sends the content and user's configuration to the AI model, which returns a structured array of questions based on the detailed instructions in the prompt.
+Step 3: The raw AI output is sent back to the client. The GeneratedQuizView component receives these questions, uses the quizParser to clean and structure the data, and then displays them for review.
+Saving and Taking a Quiz:
+From the review screen, the user can "Save Quiz". This uses the useLocalStorage hook to save the parsed quiz data to the browser.
+The user can also "Take Quiz". This also saves the quiz and then redirects them to the /quiz/[quizId]/take page.
+The QuizPlayer component loads the quiz data and presents questions one by one using the QuestionCard component, tracking the user's answers.
+Quiz Summary: Once the quiz is completed, the QuizSummary component calculates the score and displays a detailed breakdown of correct and incorrect answers.
+Viewing Saved Quizzes: The user can navigate to the /quizzes page at any time. The SavedQuizzesList component uses the useLocalStorage hook to retrieve all saved quizzes and provides options to take or delete them.
+
+
+The question type are the following:
+Differential Diagnosis Format: Choose 3 correct diagnoses from a list of 10 based on a presenting symptom or sign. Purpose: Tests the ability to formulate a list of possible conditions (differentials) for a clinical presentation. Example: What are three differential diagnoses for chest pain in a 50-year-old male?
+Quick Diagnosis Format: Choose the most likely diagnosis from 4 options given a clinical scenario. Purpose: Assesses diagnostic reasoning using classic clinical presentations. Example: A patient with fever, neck stiffness, and photophobia—choose the most likely diagnosis.
+Match the Microbe to First-Line Treatment Format: Match 4 microbes to 4 treatments. Purpose: Evaluates knowledge of appropriate antimicrobial therapy. Example: Match Clostridium difficile to oral vancomycin.
+Medication Uses Format: Given a medication, select which diseases/microbes (from 10 options) it can treat. Purpose: Tests pharmacological application of drugs. Example: For vancomycin, check the infections it treats.
+Short Facts Format: Choose the correct answer from 4 options for straightforward factual questions. Purpose: Checks foundational knowledge in anatomy, physiology, and basic science. Example: What hormone regulates blood glucose? (Answer: Insulin)
+Flowchart Completion Format: Complete missing steps in a biological or clinical pathway. Purpose: Tests understanding of sequences and processes in physiology and pathology. Example: Fill in the missing enzymes or intermediates in glycolysis.
+Word Scrabble Format: Identify a medical term using a hint and a selection of letters. Purpose: Tests recall and vocabulary in a fun, puzzle-like way. Example: Hint: Control center of the cell. (Answer: Nucleus)
+First-Line Treatment Format: Choose the best first-line treatment from 4 options for a given diagnosis. Purpose: Assesses clinical management decisions. Example: First-line for GERD? (Answer: PPIs)
+Labs Format: Interpret lab values and identify the most likely diagnosis. Purpose: Tests clinical interpretation of lab results. Example: Anemia with high MCV and low B12 = Vitamin B12 deficiency.
+Which Test to Order Format: Choose the best diagnostic test for a suspected condition. Purpose: Evaluates knowledge of diagnostic workups. Example: Suspect DVT—order Doppler Ultrasound
+An essay and OSCE section, a standard marking will be generated with the questions with which the answers would be scored (keywords and synonymous phrases/clauses would be considered)
+
+
