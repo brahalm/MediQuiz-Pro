@@ -102,14 +102,15 @@ export default function QuizConfigForm({
       }, 1500);
 
       try {
-        const response = await apiRequest("/api/generate-quiz", {
-          method: "POST",
-          body: JSON.stringify({
+        const response = await apiRequest(
+          "POST",
+          "/api/generate-quiz",
+          {
             content,
             analysis,
             config,
-          }),
-        });
+          }
+        );
 
         clearInterval(progressInterval);
         
